@@ -16,13 +16,7 @@ const path = require('path')
 dotenv.config();
 require('./config/passport');
 
-if(process.env.NODE_ENV === "production"){
-    app.use(express.static(path.join(__dirname, '../frontend/dist')));
-    
-    app.get('*', (req, res) => {
-      res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-    });
-}
+
 // Initialize app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -53,9 +47,16 @@ app.get('/dashboard', ensureAuth, (req, res) => {
     res.send(`Welcome, ${req.user.displayName}`);
 });
 
-
 // Error Handler
 app.use(errorHandler);
+
+if(process.env.NODE_ENV === "production"){
+    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+    
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    });
+}
 
 // ✅ Connect to DB *first*, THEN start server
 connectDB()
