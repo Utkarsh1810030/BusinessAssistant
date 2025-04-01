@@ -27,12 +27,6 @@ const corsOptions = {
 };
 app.use(cors(corsOptions));
 
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-});
-
 // Middleware
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default_secret',
@@ -50,6 +44,11 @@ app.use(passport.session());
 app.use('/auth', authRoutes);
 app.get('/dashboard', ensureAuth, (req, res) => {
     res.send(`Welcome, ${req.user.displayName}`);
+});
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
 });
 
 // Error Handler
