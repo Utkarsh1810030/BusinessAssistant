@@ -7,6 +7,7 @@ import GoogleLoginButton from '../components/GoogleLoginButton';
 const LandingPage = () => {
     const navigate = useNavigate();
     const BASE_URL = import.meta.env.VITE_BACKEND_URL
+    console.log(BASE_URL)
 
     useEffect(() => {
         axios
