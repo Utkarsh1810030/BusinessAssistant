@@ -1,9 +1,11 @@
 import React from 'react';
 
 const GoogleLoginButton = () => {
+    const BASE_URL = import.meta.env.VITE_BACKEND_URL
+
     const handleLogin = () => {
         window.open(
-            'https://businessassistant-production.up.railway.app/auth/google',
+            `${BASE_URL}/auth/google`,
             '_self'
         );
     };
