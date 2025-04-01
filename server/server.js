@@ -16,6 +16,13 @@ const path = require('path')
 dotenv.config();
 require('./config/passport');
 
+if(process.env.NODE_ENV === "production"){
+    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+    
+    app.get('*', (req, res) => {
+      res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+    });
+}
 // Initialize app
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -45,11 +52,7 @@ app.use('/auth', authRoutes);
 app.get('/dashboard', ensureAuth, (req, res) => {
     res.send(`Welcome, ${req.user.displayName}`);
 });
-app.use(express.static( '../frontend/dist'));
 
-app.get('*', (req, res) => {
-  res.sendFile(path.resolve(__dirname, '../frontend', 'dist' ,'index.html'));
-});
 
 // Error Handler
 app.use(errorHandler);
