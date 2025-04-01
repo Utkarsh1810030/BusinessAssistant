@@ -5,6 +5,7 @@ const router = express.Router();
 const {
     googleCallback,
     logoutUser,
+    getCurrentUser
 } = require('../controllers/auth.controller');
 
 // @route   GET /auth/google
@@ -19,6 +20,8 @@ router.get('/google/callback',
     passport.authenticate('google', { failureRedirect: '/' }),
     googleCallback
 );
+
+router.get('/me', getCurrentUser);
 
 // @route   GET /auth/logout
 // @desc    Logout the user
