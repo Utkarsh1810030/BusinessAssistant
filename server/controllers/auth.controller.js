@@ -6,10 +6,9 @@ const googleCallback = (req, res) => {
         // You can access user info with req.user
         console.log('User authenticated:', req.user);
 
-        // TODO: Add logic to store user in DB if needed
-
-        // Redirect to dashboard or return a success response
-        res.redirect('/dashboard');
+        const redirectTo = process.env.CLIENT_URL || 'http://localhost:5173';
+        console.log('✅ Redirecting to:', `${redirectTo}/dashboard`);
+        res.redirect(`${redirectTo}/dashboard`);
     } catch (error) {
         console.error('Google callback error:', error);
         res.status(500).send('Authentication failed.');
