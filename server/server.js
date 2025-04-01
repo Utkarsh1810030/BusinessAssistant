@@ -9,7 +9,6 @@ const errorHandler = require('./middlewares/errorHandler');
 const connectDB = require('./config/db');
 const configurePassport = require('./config/passport');
 const User = require('./models/User');
-const ensureAuth = require('./middlewares/authMiddleware');
 const path = require('path')
 
 // Load env variables
@@ -43,9 +42,7 @@ app.use(passport.session());
 
 // Routes
 app.use('/auth', authRoutes);
-app.get('/dashboard', ensureAuth, (req, res) => {
-    res.send(`Welcome, ${req.user.displayName}`);
-});
+
 if(process.env.NODE_ENV === "production"){
     app.use(express.static(path.join(__dirname, '../frontend/dist')));
     
