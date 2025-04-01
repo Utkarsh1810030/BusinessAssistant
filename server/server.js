@@ -46,17 +46,18 @@ app.use('/auth', authRoutes);
 app.get('/dashboard', ensureAuth, (req, res) => {
     res.send(`Welcome, ${req.user.displayName}`);
 });
+if(process.env.NODE_ENV === "production"){
+    app.use(express.static(path.join(__dirname, '../frontend/dist')));
+    
+    app.get('/(.*)/', (req, res,next) => {
+      res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+      next()
+    });
+}
 
 // Error Handler
 app.use(errorHandler);
 
-if(process.env.NODE_ENV === "production"){
-    app.use(express.static(path.join(__dirname, '../frontend/dist')));
-    
-    app.get('/(.*)/', (req, res) => {
-      res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
-    });
-}
 
 // ✅ Connect to DB *first*, THEN start server
 connectDB()

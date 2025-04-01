@@ -58,7 +58,7 @@ const Dashboard = () => {
   }, []);
 
   const handleLogout = () => {
-    axios.get(`${BASE_URL}auth/logout`, {
+    axios.get(`${BASE_URL}/auth/logout`, {
       withCredentials: true,
     });
     window.location.href = "/";
