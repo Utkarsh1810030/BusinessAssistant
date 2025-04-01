@@ -10,7 +10,11 @@ const {
 // @route   GET /auth/google
 // @desc    Redirect to Google OAuth
 router.get('/google',
-    passport.authenticate('google', { scope: ['profile', 'email'] })
+    passport.authenticate('google', { scope: ['profile', 'email'] }),
+    (req, res) => {
+        const redirectTo = process.env.CLIENT_URL || 'http://localhost:3000';
+        res.redirect(`${redirectTo}/dashboard`);
+    }
 );
 
 // @route   GET /auth/google/callback
