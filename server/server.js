@@ -31,6 +31,10 @@ app.use(session({
     secret: process.env.SESSION_SECRET || 'default_secret',
     resave: false,
     saveUninitialized: true,
+    cookie: {
+        secure: false,           // Must be false for localhost HTTP
+        sameSite: 'lax'          // Allow sending cookies from 5173
+      }
 }));
 app.use(passport.initialize());
 app.use(passport.session());
