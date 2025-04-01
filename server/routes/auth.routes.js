@@ -13,6 +13,7 @@ router.get('/google',
     passport.authenticate('google', { scope: ['profile', 'email'] }),
     (req, res) => {
         const redirectTo = process.env.CLIENT_URL || 'http://localhost:5173';
+        console.log("Redirecting to:", `${process.env.CLIENT_URL}/dashboard`);
         res.redirect(`${redirectTo}/dashboard`);
     }
 );
