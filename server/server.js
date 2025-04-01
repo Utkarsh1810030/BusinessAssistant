@@ -45,10 +45,10 @@ app.use('/auth', authRoutes);
 app.get('/dashboard', ensureAuth, (req, res) => {
     res.send(`Welcome, ${req.user.displayName}`);
 });
-app.use(express.static(path.join(__dirname, '../frontend/dist')));
+app.use(express.static( '../frontend/dist'));
 
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+  res.sendFile(path.resolve(__dirname, '../frontend', 'dist' ,'index.html'));
 });
 
 // Error Handler
