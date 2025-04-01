@@ -10,6 +10,7 @@ const connectDB = require('./config/db');
 const configurePassport = require('./config/passport');
 const User = require('./models/User');
 const ensureAuth = require('./middlewares/authMiddleware');
+const path = require('path')
 
 // Load env variables
 dotenv.config();
@@ -25,6 +26,12 @@ const corsOptions = {
     credentials: true,
 };
 app.use(cors(corsOptions));
+
+app.use(express.static(path.join(__dirname, '../frontend/dist')));
+
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/dist/index.html'));
+});
 
 // Middleware
 app.use(session({
