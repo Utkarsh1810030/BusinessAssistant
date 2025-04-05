@@ -10,6 +10,10 @@ const connectDB = require('./config/db');
 const configurePassport = require('./config/passport');
 const User = require('./models/User');
 const path = require('path')
+const analyticsRoutes = require('./routes/analytics.routes');
+const onboardRoutes = require('./routes/onboard.routes');
+const assistantRoutes = require('./routes/assistant.routes')
+
 
 // Load env variables
 dotenv.config();
@@ -28,6 +32,7 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 // Middleware
+app.use(express.json())
 app.use(session({
     secret: process.env.SESSION_SECRET || 'default_secret',
     resave: false,
@@ -42,6 +47,9 @@ app.use(passport.session());
 
 // Routes
 app.use('/auth', authRoutes);
+app.use('/api', analyticsRoutes);
+app.use('/api', onboardRoutes);
+app.use('/api/assistant', assistantRoutes)
 
 if(process.env.NODE_ENV === "production"){
     app.use(express.static(path.join(__dirname, '../frontend/dist')));
