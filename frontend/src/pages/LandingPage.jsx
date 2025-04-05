@@ -15,7 +15,7 @@ const LandingPage = () => {
             })
             .then((res) => {
                 if (res.data) {
-                    navigate(`${BASE_URL}/dashboard`);
+                    navigate(`/dashboard`);
                 }
             })
             .catch(() => {
