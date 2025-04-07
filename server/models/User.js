@@ -27,7 +27,14 @@ const userSchema = new Schema({
       '1year': [{ month: String, amount: Number }],
       '5years': [{ month: String, amount: Number }]
     }
-  }
+  },
+  websiteReport: {
+    purpose: String,
+    design: String,
+    seo: String,
+    conversion: String,
+    suggestions: [String]
+  },
   
 }, { timestamps: true });
 

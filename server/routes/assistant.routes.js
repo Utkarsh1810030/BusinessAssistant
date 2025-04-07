@@ -3,7 +3,7 @@ const router = express.Router();
 const ensureAuth = require('../middlewares/authMiddleware');
 const toolSelector = require('../tools/toolSelector');
 const User = require('../models/User')
-const {generateActions , generateStrategy, generateInsights, saveChatHistoryManually} = require('../controllers/assistant.controller')
+const {generateActions , generateStrategy, generateInsights, saveChatHistoryManually, websiteAudit} = require('../controllers/assistant.controller')
 
 // @route POST /api/assistant/strategy
 router.post('/strategy', ensureAuth, generateStrategy);
@@ -15,6 +15,10 @@ router.post('/insights', ensureAuth, generateInsights);
 
 // Save chat history manually from client
 router.post('/save', ensureAuth,saveChatHistoryManually);
+
+// Website audit route
+router.post("/website-audit", ensureAuth, websiteAudit);
+
 
 // @route POST /api/assistant/tool
 router.post('/tool', ensureAuth, async (req, res) => {

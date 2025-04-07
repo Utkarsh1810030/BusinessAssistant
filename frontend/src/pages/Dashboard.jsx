@@ -1,5 +1,8 @@
 // Dashboard.jsx — Final onboarding-aware version
 import React, { useEffect, useState } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { setUser,  logout as logoutAction } from "../store/slices/authSlice";
+import { setChatHistory, setInsights, setSuggestions, setWebsiteReport } from "../store/slices/assistantSlice";
 import axios from "axios";
 import Sidebar from "../components/Sidebar";
 import OverviewCard from "../components/OverviewCard";
@@ -8,7 +11,8 @@ import AssistantPanel from "../components/AssistantPanel";
 import BusinessWizard from "../components/BusinessWizard";
 
 const Dashboard = () => {
-  const [user, setUser] = useState(null);
+  const dispatch = useDispatch()
+  const user = useSelector(state => state.auth.user)
   const [stats, setStats] = useState(null);
   const [analytics, setAnalytics] = useState({ visits: [], sources: [] });
   const [statsLoading, setStatsLoading] = useState(true);
@@ -21,7 +25,17 @@ const Dashboard = () => {
         const res = await axios.get(`${BASE_URL}/auth/me`, {
           withCredentials: true,
         });
-        setUser(res.data);
+        dispatch(
+          setUser({
+            user : res.data,
+            onboarding: res.data.onboarding,
+            onboarded: res.data.onboarded
+          })
+        )
+        dispatch(setChatHistory(res.data.chatHistory || []));
+        dispatch(setInsights(res.data.insights || null));
+        dispatch(setSuggestions(res.data.suggestions || []));
+        dispatch(setWebsiteReport(res.data.websiteReport || null));
       } catch (err) {
         console.error("User load failed", err);
         window.location.href = "/";
@@ -33,11 +47,19 @@ const Dashboard = () => {
   // 🔁 2. Trigger onboarding complete update
   useEffect(() => {
     const handleOnboarded = () => {
-      setUser((prev) => ({ ...prev, onboarded: true }));
+      if (!user) return;
+      dispatch(
+        setUser({
+          user,
+          onboarding: user.onboarding,
+          onboarded: true
+        })
+      );
     };
     window.addEventListener("onboardingComplete", handleOnboarded);
-    return () => window.removeEventListener("onboardingComplete", handleOnboarded);
-  }, []);
+    return () =>
+      window.removeEventListener("onboardingComplete", handleOnboarded);
+  }, [user]);
 
   // 🔁 3. Fetch stats + analytics after onboarding
   useEffect(() => {
@@ -69,6 +91,7 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     axios.get(`${BASE_URL}/auth/logout`, { withCredentials: true });
+    dispatch(logoutAction());
     window.location.href = "/";
   };
 

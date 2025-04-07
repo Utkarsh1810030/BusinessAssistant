@@ -5,7 +5,6 @@ import {
 } from 'recharts';
 
 export default function RevenueForecast({ revenue }) {
-    console.log(revenue)
   const [timeframe, setTimeframe] = useState('quarter');
   const [data, setData] = useState([]);
 

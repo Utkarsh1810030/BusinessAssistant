@@ -32,7 +32,10 @@ const logoutUser = (req, res, next) => {
 // GET /auth/me
 const getCurrentUser = (req, res) => {
     if (req.isAuthenticated()) {
-        res.json(req.user);
+        res.json({
+            ...req.user.toObject(),
+            websiteReport: req.user.websiteReport || null
+          });
     } else {
         res.status(401).json(null);
     }

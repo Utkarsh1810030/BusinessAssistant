@@ -4,9 +4,10 @@ const User = require('../models/User')
 
 exports.generateActions = async (req, res) => {
   const onboarding = req.body.onboarding;
+  const chatHistory = req.body.chatHostory || '';
 
   try {
-    const prompt = `You are a business AI. Given the following onboarding data:\n${JSON.stringify(onboarding)}\nReturn 3 helpful action suggestions without numbering (JSON format): [{ label }]`;
+    const prompt = `You are a business AI. Given the following onboarding data:\n${JSON.stringify(onboarding)}\n and user's chat history\n${JSON.stringify(chatHistory)}\n:Return 3 helpful action suggestions without numbering (JSON format): [{ label }]`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -161,3 +162,46 @@ function parseInsights(text, onboarding) {
     revenue: revenueData
   };
 }
+
+exports.websiteAudit = async (req, res) => {
+  const { website, onboarding } = req.body;
+
+  const prompt = `
+You are a website audit expert. Respond ONLY in JSON. No explanations. No apologies.
+
+Given the website URL: ${website}
+And the business onboarding context: ${JSON.stringify(onboarding, null, 2)}
+
+Simulate analyzing the website and return a structured audit report with:
+
+{
+  "purpose": "Summary of website’s purpose",
+  "design": "Design & UX evaluation",
+  "seo": "SEO and content analysis",
+  "conversion": "Conversion flow analysis",
+  "suggestions": [
+    "Improve call-to-action buttons",
+    "Add meta descriptions for all pages",
+    ...
+  ]
+}
+`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "system", content: "You are a business website audit expert." },
+        { role: "user", content: prompt }
+      ],
+    });
+
+    const result = JSON.parse(response.choices[0].message.content);
+    req.user.websiteReport = result;
+    await req.user.save();
+    res.json(result);
+  } catch (err) {
+    console.error("Website audit failed:", err.message);
+    res.status(500).json({ error: "Audit failed", details: err.message });
+  }
+};

@@ -1,65 +1,119 @@
-import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
-import { CheckCircle, Rocket } from 'lucide-react';
-import RevenueForecast from './RevenueForecast';
+import React, { useEffect, useState, useRef, useMemo } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import {
+  setChatHistory,
+  setInsights,
+  setSuggestions,
+  setHasLoadedStrategy,
+  setWebsiteReport
+} from "../store/slices/assistantSlice";
+import axios from "axios";
+import { CheckCircle, Rocket } from "lucide-react";
+import RevenueForecast from "./RevenueForecast";
 
-const BASE_URL = import.meta.env.VITE_BACKEND_URL || '';
+const BASE_URL = import.meta.env.VITE_BACKEND_URL || "";
 
-const AssistantPanel = ({ onboarding , chatHistory = [], initialInsights = null}) => {
+const AssistantPanel = ({
+  onboarding,
+  chatHistory = [],
+  initialInsights = null,
+}) => {
+  const dispatch = useDispatch();
+  const storedSuggestions = useSelector((state) => state.assistant.suggestions);
   const [messages, setMessages] = useState(chatHistory);
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
-  const [suggestions, setSuggestions] = useState([]);
+  const [localSuggestions, setLocalSuggestions] = useState(storedSuggestions);
   const [clickedSuggestions, setClickedSuggestions] = useState([]);
   const [showInsights, setShowInsights] = useState(false);
   const [insightResult, setInsightResult] = useState(initialInsights);
-  const [hasLoadedStrategy, setHasLoadedStrategy] = useState(false);
+  const hasLoadedStrategy = useSelector(
+    (state) => state.assistant.hasLoadedStrategy
+  );
+  const [websiteInput, setWebsiteInput] = useState("");
+  const websiteFromOnboarding = onboarding?.website?.trim();
+  const websiteReport = useSelector(state => state.assistant.websiteReport);
+
+  console.log("###" , websiteReport)
+
   const scrollRef = useRef(null);
+  const reduxHydrated = useMemo(() => {
+    return (
+      onboarding && (chatHistory.length > 0 || storedSuggestions.length > 0)
+    );
+  }, [onboarding, chatHistory, storedSuggestions]);
 
   useEffect(() => {
-    if (!onboarding || hasLoadedStrategy || messages.length > 0) return;
-  
+    if (!onboarding || hasLoadedStrategy || reduxHydrated) return;
+
     const loadInitialStrategy = async () => {
       setLoading(true);
       try {
         const [strategyRes, actionsRes] = await Promise.all([
-          axios.post(`${BASE_URL}/api/assistant/strategy`, { onboarding }, { withCredentials: true }),
-          axios.post(`${BASE_URL}/api/assistant/actions`, { onboarding }, { withCredentials: true })
+          axios.post(
+            `${BASE_URL}/api/assistant/strategy`,
+            { onboarding },
+            { withCredentials: true }
+          ),
+          axios.post(
+            `${BASE_URL}/api/assistant/actions`,
+            { onboarding },
+            { withCredentials: true }
+          ),
         ]);
-  
+
         const assistantMessage = {
-          role: 'assistant',
-          content: strategyRes.data.result || 'Here’s a strategic summary based on your business.'
+          role: "assistant",
+          content:
+            strategyRes.data.result ||
+            "Here’s a strategic summary based on your business.",
         };
-  
-        const initialMessages = [assistantMessage];
-        setMessages(initialMessages);
-        setSuggestions(actionsRes.data.actions || []);
-        setHasLoadedStrategy(true);
-  
-        // Save strategy to chat history
-        await axios.post(`${BASE_URL}/api/assistant/save`, {
-          messages: initialMessages
-        }, { withCredentials: true });
-  
+
+        dispatch(setChatHistory([assistantMessage]));
+        dispatch(setSuggestions(actionsRes.data.actions || []));
+        dispatch(setHasLoadedStrategy(true));
+        setMessages([assistantMessage]);
+
+        await axios.post(
+          `${BASE_URL}/api/assistant/save`,
+          {
+            messages: [assistantMessage],
+          },
+          { withCredentials: true }
+        );
       } catch (err) {
-        console.error('Strategy load failed:', err);
+        console.error("Strategy load failed:", err);
       } finally {
         setLoading(false);
       }
     };
-  
+
     loadInitialStrategy();
-  }, [onboarding, messages.length, hasLoadedStrategy]);
-  
-  
-  
+  }, [onboarding, hasLoadedStrategy, reduxHydrated]);
+
   useEffect(() => {
     if (chatHistory && chatHistory.length > 0) {
       setMessages(chatHistory);
     }
   }, [chatHistory]);
-  
+
+  useEffect(() => {
+    const callAction = async () => {
+      if (!storedSuggestions.length) {
+        const actionsRes = await axios.post(
+          `${BASE_URL}/api/assistant/actions`,
+          { onboarding, chatHistory },
+          { withCredentials: true }
+        );
+        dispatch(setSuggestions(actionsRes.data.actions || []));
+        setLocalSuggestions(actionsRes.data.actions || []);
+      } else {
+        return;
+      }
+    };
+    callAction();
+  }, []);
+
   useEffect(() => {
     if (initialInsights && initialInsights.summary) {
       setInsightResult(initialInsights);
@@ -77,9 +131,10 @@ const AssistantPanel = ({ onboarding , chatHistory = [], initialInsights = null}
     const text = customInput || input;
     if (!text.trim()) return;
 
-    const newMessages = [...messages, { role: 'user', content: text }];
+    const newMessages = [...messages, { role: "user", content: text }];
+    dispatch(setChatHistory(newMessages));
     setMessages(newMessages);
-    if (!customInput) setInput('');
+    if (!customInput) setInput("");
     setLoading(true);
 
     try {
@@ -88,17 +143,25 @@ const AssistantPanel = ({ onboarding , chatHistory = [], initialInsights = null}
         { label: text, onboarding },
         { withCredentials: true }
       );
-      setMessages([...newMessages, { role: 'assistant', content: res.data.result }]);
+      setMessages([
+        ...newMessages,
+        { role: "assistant", content: res.data.result },
+      ]);
+      dispatch(
+        setChatHistory([
+          ...newMessages,
+          { role: "assistant", content: res.data.result },
+        ])
+      );
     } catch (err) {
-      console.error('Tool request failed:', err);
-      setMessages([...newMessages, { role: 'assistant', content: 'Something went wrong. Please try again.' }]);
+      console.error("Tool request failed:", err);
     } finally {
       setLoading(false);
     }
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
+    if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
@@ -106,50 +169,90 @@ const AssistantPanel = ({ onboarding , chatHistory = [], initialInsights = null}
 
   const handleSuggestionClick = async (label) => {
     setClickedSuggestions([...clickedSuggestions, label]);
-    setSuggestions((prev) => prev.filter((s) => s.label !== label));
+    setLocalSuggestions((prev) => prev.filter((s) => s.label !== label));
     await handleSend(label);
   };
 
-  const filteredSuggestions = suggestions
-    .filter(s => !clickedSuggestions.includes(s.label))
-    .slice(0, 3);
+  const filteredSuggestions =
+    localSuggestions &&
+    localSuggestions
+      .filter((s) => !clickedSuggestions.includes(s.label))
+      .slice(0, 3);
 
   const generateInsights = async () => {
     setShowInsights(true);
     try {
-      const res = await axios.post(`${BASE_URL}/api/assistant/insights`, {
-        messages,
-        onboarding,
-        forceRefresh: true
-      }, { withCredentials: true });
+      const res = await axios.post(
+        `${BASE_URL}/api/assistant/insights`,
+        {
+          messages,
+          onboarding,
+          forceRefresh: true,
+        },
+        { withCredentials: true }
+      );
       setInsightResult(res.data);
-      console.log(insightResult)
+      dispatch(setInsights(res.data));
     } catch (err) {
-      console.error('Insight generation failed:', err);
+      console.error("Insight generation failed:", err);
+    }
+  };
+
+  const generateWebsiteReport = async () => {
+    const website = websiteFromOnboarding || websiteInput;
+    if (!website) return alert("Please enter a website URL.");
+
+    try {
+      const res = await axios.post(
+        `${BASE_URL}/api/assistant/website-audit`,
+        {
+          website,
+          onboarding,
+        },
+        { withCredentials: true }
+      );
+      dispatch(setWebsiteReport(res.data));
+    } catch (err) {
+      console.error("Website audit failed:", err);
+      alert("Failed to generate website audit.");
     }
   };
 
   return (
-    <div id="assistant" className="flex flex-col p-4 bg-gray-50 rounded-xl shadow-md">
-      <h2 className="text-lg font-semibold text-gray-800 mb-4">🤖 Business Assistant</h2>
+    <div
+      id="assistant"
+      className="flex flex-col p-4 bg-gray-50 rounded-xl shadow-md"
+    >
+      <h2 className="text-lg font-semibold text-gray-800 mb-4">
+        🤖 Business Assistant
+      </h2>
 
-      <div className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-[60vh] px-1" ref={scrollRef}>
+      <div
+        className="flex-1 overflow-y-auto mb-4 space-y-3 max-h-[60vh] px-1"
+        ref={scrollRef}
+      >
         {messages.map((msg, idx) => (
           <div
             key={idx}
             className={`p-3 text-sm whitespace-pre-line rounded-xl max-w-[80%] ${
-              msg.role === 'user' ? 'bg-blue-100 text-right ml-auto' : 'bg-white text-left shadow-sm'
+              msg.role === "user"
+                ? "bg-blue-100 text-right ml-auto"
+                : "bg-white text-left shadow-sm"
             }`}
           >
             {msg.content}
           </div>
         ))}
 
-        {loading && <div className="text-sm text-gray-400">Assistant is thinking...</div>}
+        {loading && (
+          <div className="text-sm text-gray-400">Assistant is thinking...</div>
+        )}
 
         {filteredSuggestions.length > 0 && (
           <div className="mt-2">
-            <p className="text-sm font-semibold text-gray-700 mb-2">💡 Suggested Actions:</p>
+            <p className="text-sm font-semibold text-gray-700 mb-2">
+              💡 Suggested Actions:
+            </p>
             <div className="flex flex-wrap gap-2">
               {filteredSuggestions.map((s, i) => (
                 <button
@@ -183,26 +286,97 @@ const AssistantPanel = ({ onboarding , chatHistory = [], initialInsights = null}
           </button>
         </div>
 
-        <div className="mt-4 text-center">
-        <button
-  onClick={generateInsights}
-  className="text-sm px-4 py-2 bg-green-100 text-green-800 border border-green-300 rounded hover:bg-green-200"
->
-  {insightResult?.summary ? '🔄 Regenerate Insights' : '📈 Generate Deep Insights'}
-</button>
+        <div className="mt-6 border-t pt-4">
+          <h3 className="text-md font-semibold mb-2 text-gray-800">
+            🌐 Website Audit
+          </h3>
 
+          {!websiteFromOnboarding && (
+            <input
+              type="text"
+              value={websiteInput}
+              onChange={(e) => setWebsiteInput(e.target.value)}
+              placeholder="Enter your website URL..."
+              className="p-2 border rounded w-full mb-2"
+            />
+          )}
+
+          <button
+            onClick={generateWebsiteReport}
+            className="px-4 py-2 bg-indigo-600 text-white rounded hover:bg-indigo-700"
+          >
+            🔍 Generate Website Report
+          </button>
+
+          {websiteReport && (
+            <div className="mt-6 bg-white border rounded p-4 shadow space-y-4">
+              <div>
+                <h4 className="text-md font-semibold text-gray-700">
+                  📌 Purpose
+                </h4>
+                <p className="text-sm text-gray-600">{websiteReport.purpose}</p>
+              </div>
+              <div>
+                <h4 className="text-md font-semibold text-gray-700">
+                  🎨 Design & UX
+                </h4>
+                <p className="text-sm text-gray-600">{websiteReport.design}</p>
+              </div>
+              <div>
+                <h4 className="text-md font-semibold text-gray-700">
+                  🔎 SEO & Content
+                </h4>
+                <p className="text-sm text-gray-600">{websiteReport.seo}</p>
+              </div>
+              <div>
+                <h4 className="text-md font-semibold text-gray-700">
+                  🧭 Conversion Flow
+                </h4>
+                <p className="text-sm text-gray-600">
+                  {websiteReport.conversion}
+                </p>
+              </div>
+              <div>
+                <h4 className="text-md font-semibold text-gray-700">
+                  💡 Suggestions
+                </h4>
+                <ul className="list-disc ml-6 text-sm text-gray-600">
+                  {websiteReport.suggestions?.map((s, i) => (
+                    <li key={i}>{s}</li>
+                  ))}
+                </ul>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-4 text-center">
+          <button
+            onClick={generateInsights}
+            className="text-sm px-4 py-2 bg-green-100 text-green-800 border border-green-300 rounded hover:bg-green-200"
+          >
+            {insightResult?.summary
+              ? "🔄 Regenerate Insights"
+              : "📈 Generate Deep Insights"}
+          </button>
         </div>
       </div>
 
       {showInsights && insightResult && (
         <div className="mt-6 space-y-6 p-4 bg-white border rounded-lg shadow">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800 mb-1">📊 Business Summary</h3>
-            <p className="text-sm text-gray-600">{insightResult.summary || 'No summary available.'}</p>
+            <h3 className="text-lg font-semibold text-gray-800 mb-1">
+              📊 Business Summary
+            </h3>
+            <p className="text-sm text-gray-600">
+              {insightResult.summary || "No summary available."}
+            </p>
           </div>
 
           <div>
-            <h4 className="text-md font-semibold text-gray-700 mb-2">🛠️ Checklist</h4>
+            <h4 className="text-md font-semibold text-gray-700 mb-2">
+              🛠️ Checklist
+            </h4>
             <ul className="grid gap-2 text-sm text-gray-700">
               {(insightResult.checklist || []).map((item, i) => (
                 <li key={i} className="flex items-center gap-2">
@@ -214,7 +388,9 @@ const AssistantPanel = ({ onboarding , chatHistory = [], initialInsights = null}
           </div>
 
           <div>
-            <h4 className="text-md font-semibold text-gray-700 mb-2">🚀 Growth Roadmap</h4>
+            <h4 className="text-md font-semibold text-gray-700 mb-2">
+              🚀 Growth Roadmap
+            </h4>
             <ul className="grid gap-2 text-sm text-gray-700">
               {(insightResult.roadmap || []).map((step, i) => (
                 <li key={i} className="flex items-start gap-2">
@@ -226,7 +402,7 @@ const AssistantPanel = ({ onboarding , chatHistory = [], initialInsights = null}
           </div>
 
           {insightResult.revenue && (
-            <RevenueForecast revenue = {insightResult?.revenue}/>
+            <RevenueForecast revenue={insightResult?.revenue} />
           )}
         </div>
       )}
