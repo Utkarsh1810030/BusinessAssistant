@@ -1,6 +1,6 @@
 // BusinessWizard.jsx — Integrated OnboardingScreen as intro component
 import React, { useState } from 'react';
-import OnboardingScreen from './OnBoardingScreen';
+import OnboardingScreen from './OnboardingScreen';
 import '../styles/AnimatedBackground.css'
 import { useDispatch } from 'react-redux';
 import { setUser } from '../store/slices/authSlice';
