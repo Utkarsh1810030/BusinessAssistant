@@ -4,10 +4,13 @@ const User = require('../models/User')
 
 exports.generateActions = async (req, res) => {
   const onboarding = req.body.onboarding;
-  const chatHistory = req.body.chatHostory || '';
+  const chatHistory = req.body.chatHistory || '';
 
   try {
-    const prompt = `You are a business AI. Given the following onboarding data:\n${JSON.stringify(onboarding)}\n and user's chat history\n${JSON.stringify(chatHistory)}\n:Return 3 helpful action suggestions without numbering (JSON format): [{ label }]`;
+    const contextIntro = onboarding.hasOnlinePresence
+      ? "This business already has an online presence."
+      : "This business does NOT yet have an online presence.";
+    const prompt = `You are a business AI. ${contextIntro}\nGiven the following onboarding data:\n${JSON.stringify(onboarding)}\n and user's chat history\n${JSON.stringify(chatHistory)}\n:Return 3 helpful action suggestions without numbering (JSON format): [{ label }]`;
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -29,10 +32,14 @@ exports.generateStrategy = async (req, res) => {
   const onboarding = req.body.onboarding;
 
   try {
-    const prompt = `Suggest a personalized business content strategy based on this onboarding data:\n${JSON.stringify(onboarding)}`;
+    const contextIntro = onboarding.hasOnlinePresence
+      ? "This business has an online presence."
+      : "This business is offline and looking to grow.";
+
+    const prompt = `${contextIntro}\nSuggest a personalized business content strategy based on this onboarding data:\n${JSON.stringify(onboarding)}`;
 
     const completion = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: 'gpt-4',
       messages: [{ role: 'user', content: prompt }],
       temperature: 0.7,
     });
@@ -47,7 +54,6 @@ exports.generateStrategy = async (req, res) => {
 exports.generateInsights = async (req, res) => {
   try {
     const { messages, onboarding, forceRefresh = false } = req.body;
-    console.log(messages)
     const userId = req.user?._id;
     if (!messages || !onboarding || !userId) {
       return res.status(400).json({ error: 'Missing messages, onboarding data, or user' });
@@ -60,13 +66,19 @@ exports.generateInsights = async (req, res) => {
     }
 
 
-    const context = [
-      "You're a business coach AI helping small businesses grow based on their input.",
-      `Business Info: ${JSON.stringify(onboarding)}`,
-      `Chat History: ${messages.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join('\n')}`,
-      "Now give an actionable summary, checklist, roadmap and estimated monthly revenue for the next 5 years.",
-      "Format the revenue section like this: \n- Quarter: [Month 3, $3500]\n- 6 Months: [Month 6, $4000]\n- 1 Year: [Month 12, $5000]\n- 5 Years: [Month 60, $10000]"
-    ].join('\n\n');
+    const contextIntro = onboarding.hasOnlinePresence
+    ? "This business has some online presence (website, platforms, or tools)."
+    : "This business currently lacks any online presence.";
+
+  const context = [
+    "You're a business coach AI helping small businesses grow based on their input.",
+    contextIntro,
+    `Business Info: ${JSON.stringify(onboarding)}`,
+    `Chat History: ${messages.map(m => `${m.role === 'user' ? 'User' : 'AI'}: ${m.content}`).join('\n')}`,
+    "Now give an actionable summary, checklist, roadmap and estimated monthly revenue for the next 5 years.",
+    "Format the revenue section like this: \n- Quarter: [Month 3, $3500]\n- 6 Months: [Month 6, $4000]\n- 1 Year: [Month 12, $5000]\n- 5 Years: [Month 60, $10000]"
+  ].join('\n\n');
+
 
     const completion = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',

@@ -3,7 +3,8 @@ import { createSlice } from '@reduxjs/toolkit';
 const initialState = {
   user: null,
   onboarding: {},
-  onboarded: false
+  onboarded: false,
+  hasOnlinePresence: null,
 };
 
 const authSlice = createSlice({
@@ -15,6 +16,7 @@ const authSlice = createSlice({
       state.user = user;
       state.onboarding = onboarding;
       state.onboarded = onboarded;
+      state.hasOnlinePresence = action.payload.onboarding?.hasOnlinePresence || false;
     },
     logout: (state) => {
       state.user = null;

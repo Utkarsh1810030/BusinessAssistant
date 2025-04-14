@@ -26,18 +26,20 @@ router.post('/tool', ensureAuth, async (req, res) => {
   
   try {
     const result = await toolSelector(label, onboarding);
-    await User.findByIdAndUpdate(req.user._id, {
-      $push: {
-        chatHistory: { role: 'user', content: label }
-      }
-    });
-    
-    await User.findByIdAndUpdate(req.user._id, {
-      $push: {
-        chatHistory: { role: 'assistant', content: result }
-      },
-      updatedAt: new Date()
-    });
+    if(label !== "generate website"){
+      await User.findByIdAndUpdate(req.user._id, {
+        $push: {
+          chatHistory: { role: 'user', content: label }
+        }
+      });
+      
+      await User.findByIdAndUpdate(req.user._id, {
+        $push: {
+          chatHistory: { role: 'assistant', content: result }
+        },
+        updatedAt: new Date()
+      });
+    }
     res.json({ result });
   } catch (err) {
     console.error(`Tool selection failed [${label}]:`, err.message);

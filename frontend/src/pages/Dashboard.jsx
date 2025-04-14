@@ -9,6 +9,7 @@ import OverviewCard from "../components/OverviewCard";
 import AnalyticsCharts from "../components/AnalyticsCharts";
 import AssistantPanel from "../components/AssistantPanel";
 import BusinessWizard from "../components/BusinessWizard";
+import NoPresenceExperience from "../components/NoPresenceExperience";
 
 const Dashboard = () => {
   const dispatch = useDispatch()
@@ -97,6 +98,7 @@ const Dashboard = () => {
 
   if (!user) return <div className="text-center p-10 text-gray-500">Loading user...</div>;
   if (!user.onboarded) return <BusinessWizard />;
+  if (user.onboarding?.hasOnlinePresence === false) return <NoPresenceExperience user={user} />;
 
   return (
     <div className="flex min-h-screen">

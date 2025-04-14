@@ -33,8 +33,8 @@ const AssistantPanel = ({
   const [websiteInput, setWebsiteInput] = useState("");
   const websiteFromOnboarding = onboarding?.website?.trim();
   const websiteReport = useSelector(state => state.assistant.websiteReport);
-
-  console.log("###" , websiteReport)
+  const hasOnlinePresence = useSelector(state => state.auth.hasOnlinePresence);
+  const enhancedOnboarding = { ...onboarding, hasOnlinePresence };
 
   const scrollRef = useRef(null);
   const reduxHydrated = useMemo(() => {
@@ -52,12 +52,12 @@ const AssistantPanel = ({
         const [strategyRes, actionsRes] = await Promise.all([
           axios.post(
             `${BASE_URL}/api/assistant/strategy`,
-            { onboarding },
+            { onboarding: enhancedOnboarding },
             { withCredentials: true }
           ),
           axios.post(
             `${BASE_URL}/api/assistant/actions`,
-            { onboarding },
+            { onboarding: enhancedOnboarding},
             { withCredentials: true }
           ),
         ]);
@@ -102,7 +102,7 @@ const AssistantPanel = ({
       if (!storedSuggestions.length) {
         const actionsRes = await axios.post(
           `${BASE_URL}/api/assistant/actions`,
-          { onboarding, chatHistory },
+          { onboarding : enhancedOnboarding, chatHistory },
           { withCredentials: true }
         );
         dispatch(setSuggestions(actionsRes.data.actions || []));
@@ -140,7 +140,7 @@ const AssistantPanel = ({
     try {
       const res = await axios.post(
         `${BASE_URL}/api/assistant/tool`,
-        { label: text, onboarding },
+        { label: text, onboarding:enhancedOnboarding },
         { withCredentials: true }
       );
       setMessages([
@@ -186,7 +186,7 @@ const AssistantPanel = ({
         `${BASE_URL}/api/assistant/insights`,
         {
           messages,
-          onboarding,
+          onboarding: enhancedOnboarding,
           forceRefresh: true,
         },
         { withCredentials: true }

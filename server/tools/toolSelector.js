@@ -1,6 +1,8 @@
 const openai = require('../utils/openaiClient');
 
 const getPrompt = (tool, onboarding) => {
+  if (onboarding?.promptOverride) return onboarding.promptOverride;
+
   switch (tool.toLowerCase()) {
     case 'project management':
       return `Based on this data:\n${JSON.stringify(onboarding)}\nExplain how project management tools can benefit the user.`;
@@ -13,6 +15,7 @@ const getPrompt = (tool, onboarding) => {
   }
 };
 
+
 const toolSelector = async (label, onboarding) => {
   let tool = '';
   if (label.toLowerCase().includes('project')) tool = 'project management';
@@ -23,7 +26,7 @@ const toolSelector = async (label, onboarding) => {
   const prompt = getPrompt(tool, onboarding);
 
   const completion = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4',
     messages: [{ role: 'user', content: prompt }],
     temperature: 0.7,
   });

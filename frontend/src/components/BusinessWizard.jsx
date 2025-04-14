@@ -1,5 +1,9 @@
-// BusinessWizard.jsx — Fullscreen classy onboarding wizard
+// BusinessWizard.jsx — Integrated OnboardingScreen as intro component
 import React, { useState } from 'react';
+import OnboardingScreen from './OnBoardingScreen';
+import '../styles/AnimatedBackground.css'
+import { useDispatch } from 'react-redux';
+import { setUser } from '../store/slices/authSlice';
 
 const steps = [
   'Business Basics',
@@ -10,29 +14,37 @@ const steps = [
 ];
 
 const BusinessWizard = () => {
-  const [step, setStep] = useState(0);
+  const [step, setStep] = useState(-1); // -1: onboarding screen, 0: presence question, 1+: wizard steps
   const [formData, setFormData] = useState({
+    hasOnlinePresence: null,
     name: '', industry: '', stage: '',
     audience: '', pricingModel: '', revenue: '',
     website: '', platforms: '', tools: '',
     budget: '', risk: '', location: ''
   });
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, steps.length - 1));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 0));
+  const nextStep = () => setStep((prev) => Math.min(prev + 1, steps.length));
+  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const BASE_URL = import.meta.env.VITE_BACKEND_URL || "";
+  const dispatch = useDispatch()
 
   const inputClass = "w-full border border-gray-300 bg-gray-50 rounded-lg px-4 py-2 mb-5 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-gray-900";
   const labelClass = "block text-sm font-semibold text-gray-700 mb-2";
 
   const renderStep = () => {
+    if (step === -1) {
+      return <OnboardingScreen onChoice={(presence) => {
+        setFormData(prev => ({ ...prev, hasOnlinePresence: presence }));
+        setStep(1);
+      }} />;
+    }
+
     switch (step) {
-      case 0:
+      case 1:
         return (
           <div>
             <label className={labelClass}>Business Name</label>
@@ -43,7 +55,7 @@ const BusinessWizard = () => {
             <input name="stage" value={formData.stage} onChange={handleChange} placeholder="Idea, Early, Scaling" className={inputClass} />
           </div>
         );
-      case 1:
+      case 2:
         return (
           <div>
             <label className={labelClass}>Target Audience</label>
@@ -54,8 +66,8 @@ const BusinessWizard = () => {
             <input name="revenue" value={formData.revenue} onChange={handleChange} placeholder="e.g. $5,000/month" className={inputClass} />
           </div>
         );
-      case 2:
-        return (
+      case 3:
+        return formData.hasOnlinePresence ? (
           <div>
             <label className={labelClass}>Website URL</label>
             <input name="website" value={formData.website} onChange={handleChange} placeholder="e.g. www.consolevortex.com" className={inputClass} />
@@ -64,8 +76,15 @@ const BusinessWizard = () => {
             <label className={labelClass}>Tools / CRM</label>
             <input name="tools" value={formData.tools} onChange={handleChange} placeholder="e.g. Notion, HubSpot" className={inputClass} />
           </div>
+        ) : (
+          <div>
+            <label className={labelClass}>Preferred customer channel</label>
+            <input name="platforms" value={formData.platforms} onChange={handleChange} placeholder="e.g. Referrals, In-person, Phone" className={inputClass} />
+            <label className={labelClass}>Interested in going online?</label>
+            <input name="tools" value={formData.tools} onChange={handleChange} placeholder="e.g. Yes, later" className={inputClass} />
+          </div>
         );
-      case 3:
+      case 4:
         return (
           <div>
             <label className={labelClass}>Monthly Budget</label>
@@ -76,7 +95,7 @@ const BusinessWizard = () => {
             <input name="location" value={formData.location} onChange={handleChange} placeholder="City, Country" className={inputClass} />
           </div>
         );
-      case 4:
+      case 5:
         return (
           <div>
             <h2 className="font-semibold text-lg mb-2 text-gray-800">Review</h2>
@@ -86,6 +105,7 @@ const BusinessWizard = () => {
             <button
               onClick={async () => {
                 try {
+                  const BASE_URL = import.meta.env.VITE_BACKEND_URL;
                   const res = await fetch(`${BASE_URL}/api/onboard`, {
                     method: 'POST',
                     headers: {
@@ -94,11 +114,17 @@ const BusinessWizard = () => {
                     credentials: 'include',
                     body: JSON.stringify(formData)
                   });
-              
+
                   if (res.ok) {
-                    // 👇 Inform parent that onboarding is done
                     window.dispatchEvent(new Event('onboardingComplete'));
-                    window.location.reload();
+                    const updated = await res.json();
+                    dispatch(setUser({
+                      user: updated,
+                      onboarding: updated.onboarding,
+                      onboarded: true,
+                      hasOnlinePresence: updated.onboarding?.hasOnlinePresence || false
+                    }));
+                    window.location.reload()
                   } else {
                     console.error('❌ Failed to submit onboarding');
                   }
@@ -106,7 +132,6 @@ const BusinessWizard = () => {
                   console.error('❌ Error submitting form:', err);
                 }
               }}
-              
               className="mt-2 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded shadow"
             >
               Submit
@@ -119,27 +144,31 @@ const BusinessWizard = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-gray-50 flex items-center justify-center px-4">
+    <div className="w-full min-h-screen animated-bg bg-gray-50 flex items-center justify-center px-4">
       <div className="w-full max-w-3xl bg-white p-10 rounded-2xl shadow-lg">
-        <h1 className="text-3xl font-bold text-blue-600 mb-6 text-center">{steps[step]}</h1>
+        {step > 0 && (
+          <h1 className="text-3xl font-bold text-blue-600 mb-6 text-center">{steps[step - 1]}</h1>
+        )}
         {renderStep()}
-        <div className="flex justify-between mt-8">
-          <button
-            onClick={prevStep}
-            disabled={step === 0}
-            className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded disabled:opacity-50"
-          >
-            Back
-          </button>
-          {step < steps.length - 1 ? (
+        {step > 0 && step <= steps.length && (
+          <div className="flex justify-between mt-8">
             <button
-              onClick={nextStep}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded shadow"
+              onClick={prevStep}
+              disabled={step === 1}
+              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded disabled:opacity-50"
             >
-              Next
+              Back
             </button>
-          ) : null}
-        </div>
+            {step < steps.length && (
+              <button
+                onClick={nextStep}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded shadow"
+              >
+                Next
+              </button>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );

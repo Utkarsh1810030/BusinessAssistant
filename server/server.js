@@ -13,6 +13,8 @@ const path = require("path");
 const analyticsRoutes = require("./routes/analytics.routes");
 const onboardRoutes = require("./routes/onboard.routes");
 const assistantRoutes = require("./routes/assistant.routes");
+const userRoutes = require('./routes/user.routes')
+const ragRoutes = require('./routes/rag.routes')
 
 // Load env variables
 dotenv.config();
@@ -50,6 +52,8 @@ app.use("/auth", authRoutes);
 app.use("/api", analyticsRoutes);
 app.use("/api", onboardRoutes);
 app.use("/api/assistant", assistantRoutes);
+app.use('/api/user', userRoutes);
+app.use('/api/rag', ragRoutes)
 
 if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "../frontend/dist")));
