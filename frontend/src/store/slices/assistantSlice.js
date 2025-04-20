@@ -6,6 +6,9 @@ const initialState = {
   suggestions: [],
   hasLoadedStrategy: false,
   websiteReport: null,
+  roadmap: null,
+  summary : null,
+  iframeHtml: ""
 };
 
 const assistantSlice = createSlice({
@@ -27,6 +30,15 @@ const assistantSlice = createSlice({
     setWebsiteReport: (state, action) => {
       state.websiteReport = action.payload;
     },
+    setRoadmap: (state, action) => {
+      state.roadmap = action.payload;
+    },
+    setSummary: (state, action) => {
+      state.summary = action.payload
+    },
+    setIframeHtml : (state, action) => {
+      state.iframeHtml = action.payload
+    }
   },
 });
 
@@ -35,6 +47,9 @@ export const {
   setInsights,
   setSuggestions,
   setHasLoadedStrategy,
-  setWebsiteReport
+  setWebsiteReport,
+  setRoadmap,
+  setSummary,
+  setIframeHtml
 } = assistantSlice.actions;
 export default assistantSlice.reducer;

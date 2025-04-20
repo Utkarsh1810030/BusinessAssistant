@@ -5,15 +5,15 @@ const ensureAuth = require('../middlewares/authMiddleware');
 
 // TODO
 // GET /api/user/business-profile
-// router.get('/business-profile', ensureAuth, async (req, res) => {
-//   try {
-//     const profile = await BusinessProfile.findOne({ userId: req.user._id });
-//     res.json(profile || {});
-//   } catch (err) {
-//     console.error('❌ Failed to fetch full business profile:', err);
-//     res.status(500).json({ message: 'Failed to fetch business profile' });
-//   }
-// });
+router.get('/business-profile', ensureAuth, async (req, res) => {
+  try {
+    const profile = await BusinessProfile.findOne({ userId: req.user._id });
+    res.json(profile || {});
+  } catch (err) {
+    console.error('❌ Failed to fetch full business profile:', err);
+    res.status(500).json({ message: 'Failed to fetch business profile' });
+  }
+});
 
 // GET /api/user/site-summary
 router.get('/site-summary', ensureAuth, async (req, res) => {

@@ -7,6 +7,7 @@ const {
   queryRelevantDocs,
 } = require("../services/rag.services");
 const openai = require("../utils/openaiClient");
+const User = require("../models/User");
 
 // POST /api/rag/upload
 // Body: { items: [{ text: string, type?: string, source?: string }] }
@@ -21,7 +22,6 @@ router.post("/upload", ensureAuth, async (req, res) => {
 
   try {
     const result = await upsertDocuments({ userId, items, businessName });
-    console.log("📥 Document inserted:", JSON.stringify(points[0], null, 2));
     if (result.success) {
       res.json({ message: "Documents uploaded and embedded successfully." });
     } else {
@@ -108,6 +108,86 @@ router.post("/summary", ensureAuth, async (req, res) => {
   } catch (err) {
     console.error("❌ /rag/summary failed:", err);
     res.status(500).json({ message: "RAG summary generation failed" });
+  }
+});
+
+router.post("/onecom-roadmap", async (req, res) => {
+  const { onboarding } = req.body;
+  const userId = req.user?._id;
+
+  if (!userId || !onboarding) {
+    return res.status(400).json({ error: "Missing user or onboarding data." });
+  }
+
+  const getSuggestedTld = (industry = "") => {
+    industry = industry.toLowerCase();
+    if (industry.includes("tech")) return ".io";
+    if (industry.includes("shop") || industry.includes("retail"))
+      return ".shop";
+    if (industry.includes("health")) return ".clinic";
+    if (industry.includes("edu") || industry.includes("learn"))
+      return ".academy";
+    return ".com";
+  };
+
+  try {
+    const memoryMatches = await queryRelevantDocs({
+      userId,
+      query: `Which One.com offerings can help this business? Here is the context: ${JSON.stringify(
+        onboarding
+      )}`,
+    });
+
+    const tld = getSuggestedTld(onboarding.industry);
+    const domainName = `${onboarding.name
+      .toLowerCase()
+      .replace(/\s+/g, "")}${tld}`;
+
+    const prompt = `You are an onboarding coach for One.com.
+Analyze this business:
+${JSON.stringify(onboarding)}
+
+Here are relevant One.com features:
+${memoryMatches.join("\n")}
+
+Strictly return a JSON object like this from relevant One.com features:
+{
+  "tagline": "Short benefit headline",
+  "featureAlignment": ["Feature: How it helps", "..."],
+  "pricingPlans": [
+  { "plan": "Beginner", "price": "$0.99/mo", "benefits": ["..."] },
+  { "plan": "Enthusiast", "price": "$2.99/mo", "benefits": ["..."] },
+  { "plan": "Guru", "price": "$9.99/mo", "benefits": ["..."] }
+],
+  "trustScore": "3.9/5 from 21,000+ users",
+  "testimonials": ["Real customer quotes"],
+  "domainSuggestion": "${domainName}",
+  "totalCostEstimate": "$0.99/month (domain free with hosting)"
+}`;
+
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4",
+      messages: [
+        { role: "user", content: prompt },
+        {
+          role: "system",
+          content:
+            "You are a JSON-only assistant. Always respond with valid JSON and nothing else.",
+        },
+      ],
+      temperature: 0.7,
+    });
+
+    const result = JSON.parse(completion.choices[0].message.content);
+    await User.findByIdAndUpdate(userId, {
+      $set: {
+        roadmap: result,
+      },
+    });
+    res.json(result);
+  } catch (err) {
+    console.error("❌ onecom-roadmap error:", err.message);
+    res.status(500).json({ error: "Failed to generate roadmap." });
   }
 });
 

@@ -35,6 +35,21 @@ const userSchema = new Schema({
     conversion: String,
     suggestions: [String]
   },
+  roadmap: {
+    tagline: String,
+    featureAlignment: [String],
+    pricingPlans: [
+      {
+        plan: String,
+        price: String,
+        benefits: [String]
+      }
+    ],
+    trustScore: String,
+    testimonials: [String],
+    domainSuggestion: String,
+    totalCostEstimate: String
+  }
   
 }, { timestamps: true });
 

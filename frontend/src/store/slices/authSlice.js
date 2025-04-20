@@ -5,6 +5,7 @@ const initialState = {
   onboarding: {},
   onboarded: false,
   hasOnlinePresence: null,
+  businessProfile: {}
 };
 
 const authSlice = createSlice({
@@ -23,8 +24,11 @@ const authSlice = createSlice({
       state.onboarding = {};
       state.onboarded = false;
     },
+    setBusinessProfile: (state, action) => {
+      state.businessProfile = action.payload
+    }
   },
 });
 
-export const { setUser, logout } = authSlice.actions;
+export const { setUser, logout, setBusinessProfile } = authSlice.actions;
 export default authSlice.reducer;

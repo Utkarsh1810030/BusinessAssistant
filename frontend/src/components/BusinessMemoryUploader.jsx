@@ -17,44 +17,7 @@ const BASE_URL = import.meta.env.VITE_BACKEND_URL || "";
 
     try {
       await axios.post(`${BASE_URL}/api/rag/upload`, {
-        items: [
-            {
-                "text": "Since switching to Business Assistant, we've tripled our customer engagement. The insights are accurate and the AI assistant feels like a real business coach.",
-                "type": "testimonials",
-                "source": "manual"
-              },
-              {
-                "text": "Business Assistant helped us launch our online store in under 5 days. The forecasting tools gave us confidence to expand beyond local sales.",
-                "type": "testimonials",
-                "source": "manual"
-              },
-              {
-                "text": "We offer a complete digital presence launch kit, including landing page design, SEO setup, and integration with platforms like Google My Business and Facebook.",
-                "type": "offerings",
-                "source": "manual"
-              },
-              {
-                "text": "Our AI assistant provides daily business insights based on your sales, goals, and customer behavior — all personalized to your industry and size.",
-                "type": "offerings",
-                "source": "manual"
-              },
-              {
-                "text": "Case Study: Cozy Crafts increased their monthly revenue by 250% after implementing Business Assistant. Our AI roadmap helped them set realistic growth goals and execute with confidence. They used our social scheduling and CRM suggestions to re-engage old customers and upsell new ones.",
-                "type": "case_study",
-                "source": "manual"
-              },
-              {
-                "text": "Q: Do I need a website to use Business Assistant?\nA: Not at all! We help you build your presence from scratch, including launching your first website, setting up social channels, and tracking offline engagement.",
-                "type": "faq",
-                "source": "manual"
-              },
-              {
-                "text": "Q: Is Business Assistant suitable for small local businesses?\nA: Absolutely. Our tools are designed to help solo entrepreneurs, family businesses, and local service providers get digital without needing a tech team.",
-                "type": "faq",
-                "source": "manual"
-              }
-              
-        ]
+        items:[]
       }, { withCredentials: true });
 
       setStatus('success');

@@ -1,108 +1,154 @@
-// BusinessWizard.jsx — Integrated OnboardingScreen as intro component
+// BusinessWizard.jsx — Fixed input field styling with shared className
 import React, { useState } from 'react';
-import OnboardingScreen from './OnboardingScreen';
-import '../styles/AnimatedBackground.css'
+import { motion, AnimatePresence } from 'framer-motion';
 import { useDispatch } from 'react-redux';
 import { setUser } from '../store/slices/authSlice';
 
 const steps = [
-  'Business Basics',
-  'Target & Revenue',
-  'Presence & Tools',
-  'Risk & Region',
-  'Summary'
+  'Business Info',
+  'Audience & Revenue',
+  'Online Presence',
+  'Tools & Channels',
+  'Budget & Risk',
+  'Location',
+  'Summary',
 ];
 
+const inputClass =
+  'w-full bg-[#181820] text-white placeholder-gray-400 border border-gray-700 rounded-lg px-4 py-3 focus:outline-none focus:ring-2 focus:ring-blue-500';
+
 const BusinessWizard = () => {
-  const [step, setStep] = useState(-1); // -1: onboarding screen, 0: presence question, 1+: wizard steps
+  const dispatch = useDispatch()
+  const [step, setStep] = useState(0);
   const [formData, setFormData] = useState({
     hasOnlinePresence: null,
-    name: '', industry: '', stage: '',
-    audience: '', pricingModel: '', revenue: '',
-    website: '', platforms: '', tools: '',
-    budget: '', risk: '', location: ''
+    name: '',
+    industry: '',
+    stage: '',
+    audience: '',
+    pricingModel: '',
+    revenue: '',
+    website: '',
+    platforms: '',
+    tools: '',
+    budget: '',
+    risk: '',
+    location: '',
   });
 
-  const nextStep = () => setStep((prev) => Math.min(prev + 1, steps.length));
-  const prevStep = () => setStep((prev) => Math.max(prev - 1, 1));
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const dispatch = useDispatch()
+  const nextStep = () => setStep((prev) => Math.min(prev + 1, steps.length));
+  const prevStep = () => setStep((prev) => Math.max(prev - 1, 0));
 
-  const inputClass = "w-full border border-gray-300 bg-gray-50 rounded-lg px-4 py-2 mb-5 focus:outline-none focus:ring-2 focus:ring-blue-500 placeholder-gray-500 text-gray-900";
-  const labelClass = "block text-sm font-semibold text-gray-700 mb-2";
+  const renderDots = () => (
+    <div className="flex justify-center gap-1 mb-6">
+      {[...Array(7)].map((_, i) => (
+        <div
+          key={i}
+          className={`h-1.5 w-6 rounded-full ${i === step ? 'bg-blue-500' : 'bg-gray-700'}`}
+        />
+      ))}
+    </div>
+  );
 
-  const renderStep = () => {
-    if (step === -1) {
-      return <OnboardingScreen onChoice={(presence) => {
-        setFormData(prev => ({ ...prev, hasOnlinePresence: presence }));
-        setStep(1);
-      }} />;
-    }
+  const cardClass =
+    'bg-[#111118] border border-[#282838] rounded-2xl px-10 py-16 shadow-xl w-full max-w-md text-center';
 
-    switch (step) {
-      case 1:
-        return (
-          <div>
-            <label className={labelClass}>Business Name</label>
-            <input name="name" value={formData.name} onChange={handleChange} placeholder="e.g. ConsoleVortex" className={inputClass} />
-            <label className={labelClass}>Industry</label>
-            <input name="industry" value={formData.industry} onChange={handleChange} placeholder="e.g. SaaS, Retail, Services" className={inputClass} />
-            <label className={labelClass}>Stage</label>
-            <input name="stage" value={formData.stage} onChange={handleChange} placeholder="Idea, Early, Scaling" className={inputClass} />
-          </div>
-        );
-      case 2:
-        return (
-          <div>
-            <label className={labelClass}>Target Audience</label>
-            <input name="audience" value={formData.audience} onChange={handleChange} placeholder="e.g. Freelancers, Startups" className={inputClass} />
-            <label className={labelClass}>Revenue Model</label>
-            <input name="pricingModel" value={formData.pricingModel} onChange={handleChange} placeholder="e.g. Subscription, One-time, Freemium" className={inputClass} />
-            <label className={labelClass}>Current Revenue</label>
-            <input name="revenue" value={formData.revenue} onChange={handleChange} placeholder="e.g. $5,000/month" className={inputClass} />
-          </div>
-        );
-      case 3:
-        return formData.hasOnlinePresence ? (
-          <div>
-            <label className={labelClass}>Website URL</label>
-            <input name="website" value={formData.website} onChange={handleChange} placeholder="e.g. www.consolevortex.com" className={inputClass} />
-            <label className={labelClass}>Online Platforms Used</label>
-            <input name="platforms" value={formData.platforms} onChange={handleChange} placeholder="e.g. Instagram, Shopify" className={inputClass} />
-            <label className={labelClass}>Tools / CRM</label>
-            <input name="tools" value={formData.tools} onChange={handleChange} placeholder="e.g. Notion, HubSpot" className={inputClass} />
-          </div>
-        ) : (
-          <div>
-            <label className={labelClass}>Preferred customer channel</label>
-            <input name="platforms" value={formData.platforms} onChange={handleChange} placeholder="e.g. Referrals, In-person, Phone" className={inputClass} />
-            <label className={labelClass}>Interested in going online?</label>
-            <input name="tools" value={formData.tools} onChange={handleChange} placeholder="e.g. Yes, later" className={inputClass} />
-          </div>
-        );
-      case 4:
-        return (
-          <div>
-            <label className={labelClass}>Monthly Budget</label>
-            <input name="budget" value={formData.budget} onChange={handleChange} placeholder="e.g. $500" className={inputClass} />
-            <label className={labelClass}>Risk Willingness</label>
-            <input name="risk" value={formData.risk} onChange={handleChange} placeholder="Low, Medium, High" className={inputClass} />
-            <label className={labelClass}>Business Location</label>
-            <input name="location" value={formData.location} onChange={handleChange} placeholder="City, Country" className={inputClass} />
-          </div>
-        );
-      case 5:
-        return (
-          <div>
-            <h2 className="font-semibold text-lg mb-2 text-gray-800">Review</h2>
-            <pre className="text-sm bg-gray-100 p-4 rounded mb-4 text-gray-700">
-              {JSON.stringify(formData, null, 2)}
-            </pre>
-            <button
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-[#0A0A0F] text-white relative overflow-hidden font-inter">
+      <motion.div className="absolute top-[-100px] left-[-100px] w-[400px] h-[400px] bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 rounded-full blur-3xl opacity-20 animate-pulse" />
+      <motion.div className="absolute bottom-[-120px] right-[-80px] w-[300px] h-[300px] bg-gradient-to-tr from-blue-500 to-violet-700 rounded-full blur-2xl opacity-20 animate-pulse" />
+
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={step}
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -40 }}
+          transition={{ duration: 0.6 }}
+          className={cardClass}
+        >
+          {renderDots()}
+
+          {step === 0 && (
+            <>
+              <h2 className="text-2xl font-semibold mb-6">Tell us about your business</h2>
+              <input name="name" placeholder="Business Name" className={inputClass} value={formData.name} onChange={handleChange} />
+              <input name="industry" placeholder="Industry" className={`${inputClass} mt-4`} value={formData.industry} onChange={handleChange} />
+              <input name="stage" placeholder="Stage" className={`${inputClass} mt-4`} value={formData.stage} onChange={handleChange} />
+            </>
+          )}
+
+          {step === 1 && (
+            <>
+              <h2 className="text-2xl font-semibold mb-6">Audience & Revenue</h2>
+              <input name="audience" placeholder="Target Audience" className={inputClass} value={formData.audience} onChange={handleChange} />
+              <input name="pricingModel" placeholder="Pricing Model" className={`${inputClass} mt-4`} value={formData.pricingModel} onChange={handleChange} />
+              <input name="revenue" placeholder="Revenue" className={`${inputClass} mt-4`} value={formData.revenue} onChange={handleChange} />
+            </>
+          )}
+
+          {step === 2 && (
+            <>
+              <h2 className="text-2xl font-semibold mb-6">Do you have an online presence?</h2>
+              <div className="flex flex-col gap-4 mb-6">
+                <button onClick={() => setFormData({ ...formData, hasOnlinePresence: true })} className={`w-full py-3 rounded-lg border ${formData.hasOnlinePresence ? 'border-blue-500' : 'border-gray-700'} bg-[#181820]`}>Yes</button>
+                <button onClick={() => setFormData({ ...formData, hasOnlinePresence: false })} className={`w-full py-3 rounded-lg border ${formData.hasOnlinePresence === false ? 'border-blue-500' : 'border-gray-700'} bg-[#181820]`}>No</button>
+              </div>
+            </>
+          )}
+
+{step === 3 && (
+  formData.hasOnlinePresence ? (
+    <>
+      <h2 className="text-2xl font-semibold mb-6">Online tools and platforms</h2>
+      <input name="website" placeholder="Website (if any)" className={inputClass} value={formData.website} onChange={handleChange} />
+      <input name="platforms" placeholder="e.g. Facebook, Shopify" className={`${inputClass} mt-4`} value={formData.platforms} onChange={handleChange} />
+      <input name="tools" placeholder="e.g. HubSpot, Zapier" className={`${inputClass} mt-4`} value={formData.tools} onChange={handleChange} />
+    </>
+  ) : (
+    <>
+      <h2 className="text-2xl font-semibold mb-6">How do you interact with customers?</h2>
+      <input name="platforms" placeholder="e.g. In-person, WhatsApp" className={inputClass} value={formData.platforms} onChange={handleChange} />
+      <input name="tools" placeholder="Any tools you're planning to use?" className={`${inputClass} mt-4`} value={formData.tools} onChange={handleChange} />
+    </>
+  )
+)}
+
+          {step === 4 && (
+            <>
+              <h2 className="text-2xl font-semibold mb-6">Budget & Risk</h2>
+              <input name="budget" placeholder="e.g. 500" className={inputClass} value={formData.budget} onChange={handleChange} />
+              <input name="risk" placeholder="e.g. Low, Medium, High" className={`${inputClass} mt-4`} value={formData.risk} onChange={handleChange} />
+            </>
+          )}
+
+          {step === 5 && (
+            <>
+              <h2 className="text-2xl font-semibold mb-6">Where are you located?</h2>
+              <input name="location" placeholder="City, Country" className={inputClass} value={formData.location} onChange={handleChange} />
+            </>
+          )}
+
+          {step === 6 && (
+            <>
+              <h2 className="text-2xl font-semibold mb-6">Summary</h2>
+              <pre className="text-left bg-[#181820] text-green-400 text-sm p-4 rounded-lg mb-6 overflow-x-auto">
+                {JSON.stringify(formData, null, 2)}
+              </pre>
+            </>
+          )}
+
+          <div className="flex justify-between mt-6">
+            <button onClick={prevStep} disabled={step === 0} className="px-5 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg disabled:opacity-50">Back</button>
+            {step < steps.length - 1 ? (
+              <button onClick={nextStep} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">Continue</button>
+            ) : (
+              <button
               onClick={async () => {
                 try {
                   const BASE_URL = import.meta.env.VITE_BACKEND_URL;
@@ -136,40 +182,10 @@ const BusinessWizard = () => {
             >
               Submit
             </button>
-          </div>
-        );
-      default:
-        return null;
-    }
-  };
-
-  return (
-    <div className="w-full min-h-screen animated-bg bg-gray-50 flex items-center justify-center px-4">
-      <div className="w-full max-w-3xl bg-white p-10 rounded-2xl shadow-lg">
-        {step > 0 && (
-          <h1 className="text-3xl font-bold text-blue-600 mb-6 text-center">{steps[step - 1]}</h1>
-        )}
-        {renderStep()}
-        {step > 0 && step <= steps.length && (
-          <div className="flex justify-between mt-8">
-            <button
-              onClick={prevStep}
-              disabled={step === 1}
-              className="bg-gray-200 hover:bg-gray-300 text-gray-700 px-5 py-2 rounded disabled:opacity-50"
-            >
-              Back
-            </button>
-            {step < steps.length && (
-              <button
-                onClick={nextStep}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded shadow"
-              >
-                Next
-              </button>
             )}
           </div>
-        )}
-      </div>
+        </motion.div>
+      </AnimatePresence>
     </div>
   );
 };
